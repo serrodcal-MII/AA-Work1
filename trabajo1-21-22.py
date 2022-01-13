@@ -428,6 +428,17 @@ def get_chunks(X,y,n):
     a = np.concatenate((X, y[:, None]), axis=1) 
     return np.split(a, np.arange(n,len(a),n))
 
+# Last batch size could be less than batch_size
+def batch_reshaping(X, y, batch_size):
+    d = batch_size + 1 - X.shape[0]
+    if d > 0:
+        # Transforn Xt_train into (batch_size+1,X_train.shape[1])
+        fx = np.ndarray(shape=(d,X.shape[1]))
+        fy  = np.zeros(d)
+        X = np.concatenate((X, fx), axis=0)
+        y = np.concatenate((y, fy), axis=0)
+    return X,y
+
 class RegresionLogisticaMiniBatch():
 
     def __init__(self, clases, normalizacion=False, rate=0.1, rate_decay=False, batch_tam=64, pesos_iniciales=None):
@@ -450,54 +461,38 @@ class RegresionLogisticaMiniBatch():
         self.normalization = False
         if self.normalization:
             X_train = normalize(X_train)
-            y_train = normalize(y_train)
 
-        X_train, y_train = randon_shuffle(X_train,y_train)
         if not self.w or reiniciar_pesos:
             # random initialization of weights vector between -1 and 1
             self.w = np.random.uniform(low=-1, high=1, size=(X_train.shape[1],))
-            #self.w = np.random.uniform(low=-1, high=1, size=(self.batch_size+1,))
-
         
-        # Calculate the number of chunks from batch size
-        n_chunks = X_train.shape[0]/self.batch_size
-        # Let's split into chunk_size parts
-        chunks = get_chunks(X_train, y_train, self.batch_size)
-        
-        score = None # TODO ?
         rate_0, rate_n = self.rate, self.rate
 
-        # Main loop, it stops whether converge or reach the numbers of epochs
+        # Main loop, it stops whether converges or reaches the numbers of epochs
         while not convergence and iteration < n_epochs:
+
+            # Random shuffle keeping correspondence
+            X_train, y_train = randon_shuffle(X_train,y_train)
+            # Let's split into chunk_size parts
+            chunks = get_chunks(X_train, y_train, self.batch_size)
 
             for chunk in chunks:
                 Xc_train, yc_train = chunk[:,:-1], chunk[:,-1]
+                # x0 + w·x into w·x
                 Xt_train, yt_train = transform(Xc_train, yc_train)
-                # Checkin shape of chunk
-                d = self.batch_size + 1 - Xt_train.shape[0]
-                if d > 0:
-                    # Transforn Xt_train into (batch_size+1,X_train.shape[1])
-                    fx = np.ndarray(shape=(d,Xt_train.shape[1]))
-                    fy  = np.zeros(d)
-                    Xt_train = np.concatenate((Xt_train, fx), axis=0)
-                    yt_train = np.concatenate((yt_train, fy), axis=0)
-                # Update weights
+                # Checking shape of chunk
+                Xt_train, yt_train = batch_reshaping(Xt_train, yt_train, self.batch_size)
                 # generate rate vector to update weights
                 r = np.zeros(self.w.shape[0])
                 r.fill(rate_n)
                 # Stocastic version: wi <- wi + r * (y - o) * xi
                 o = 1 / (1 + np.e ** (-np.dot(Xt_train, self.w))) #sigmoid
                 w = self.w + r * (np.dot(Xt_train.T, (yt_train - o) ))
+                # Update weights
                 self.w = w
-                print(self.w)
 
             if self.rate_decay:
                 rate_n = (rate_0) * (1 / (1 + iteration))
-            
-            # New shuffle because of mini-batch
-            X_train, y_train = randon_shuffle(X_train,y_train)
-            # New chunks for mini-batching
-            chunks = get_chunks(X_train, y_train, self.batch_size)
 
             iteration  += 1
             #convergence = True # TODO: borrar esto, solo para debug
