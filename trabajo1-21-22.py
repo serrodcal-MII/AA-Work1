@@ -411,12 +411,11 @@ def normalize(self,X):
     return Xnorm
     
 # transform x0 + w·x into w·x
-def transform(X,y):
-    x0 = np.ones((1,X.shape[1]))
+def transform(X):
+    x0 = np.ones((1,X.shape[0]))
     # Add x0 in the begining to transform x0 + w·x into w·x
-    Xt = np.append(x0, X, axis=0)
-    yt = np.append([0], y, axis=0)
-    return Xt, yt,
+    Xt = np.hstack((x0.T,X))
+    return Xt
 
 # perform random shuffle keeping the correspondence
 def randon_shuffle(X,y):
@@ -464,7 +463,7 @@ class RegresionLogisticaMiniBatch():
 
         if not self.w or reiniciar_pesos:
             # random initialization of weights vector between -1 and 1
-            self.w = np.random.uniform(low=-1, high=1, size=(X_train.shape[1],))
+            self.w = np.random.uniform(low=-1, high=1, size=(X_train.shape[1]+1,))
         
         rate_0, rate_n = self.rate, self.rate
 
@@ -477,9 +476,9 @@ class RegresionLogisticaMiniBatch():
             chunks = get_chunks(X_train, y_train, self.batch_size)
 
             for chunk in chunks:
-                Xc_train, yc_train = chunk[:,:-1], chunk[:,-1]
+                Xc_train, yt_train = chunk[:,:-1], chunk[:,-1]
                 # x0 + w·x into w·x
-                Xt_train, yt_train = transform(Xc_train, yc_train)
+                Xt_train = transform(Xc_train)
                 # Checking shape of chunk
                 Xt_train, yt_train = batch_reshaping(Xt_train, yt_train, self.batch_size)
                 # generate rate vector to update weights
@@ -498,20 +497,28 @@ class RegresionLogisticaMiniBatch():
             #convergence = True # TODO: borrar esto, solo para debug
 
     def clasifica_prob(self, E):
-        pass
+        if len(self.w) == 0:
+            raise ClasificadorNoEntrenado("Clasificador no entrenado")
+        
+        Xt = transform(E)
+        return 1 / (1 + np.e ** (-np.dot(Xt, self.w)))
 
     def clasifica(self, E):
-        # Perform predict ?
-        # lv = 1 / (1 + np.e ** (-np.dot(self.w, Xt_train)))
-        pass
+        predict_proba = self.clasifica_prob(E)
+        predictions = (predict_proba > .5).astype(int)
+        y = np.where(predictions==1,self.classes[1],self.classes[0])
+        return np.asarray(y)
 
 
+# TODO: borrar solo para debug
 X_iris, y_iris = carga_datos.X_iris, carga_datos.y_iris
-classes = np.array(list(set(y_iris)))
+classes = ['setosa','versicula','miprima']
 lrmb = RegresionLogisticaMiniBatch(clases=classes)
-print("Antes",lrmb.w)
 lrmb.entrena(X_iris, y_iris, n_epochs=3)
-print("despues",lrmb.w)
+# lv = lrmb.clasifica_prob(X_iris)
+# print(lv)
+res = lrmb.clasifica(X_iris)
+print(res)
 
 # =================================================
 # EJERCICIO 3: IMPLEMENTACIÓN DE VALIDACIÓN CRUZADA
