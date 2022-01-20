@@ -164,7 +164,6 @@ import carga_datos
 #          array([81, 91, 88]))
 # ------------------------------------------------------------------
 
-
 def particion_entr_prueba(X,y,test=0.20):
     # Maintain correspondence between X and y
     # Note: (n,) is not the same shape of (n,1), casting vector by using [:, None]
@@ -197,7 +196,7 @@ def particion_entr_prueba(X,y,test=0.20):
     # X_train, X_test, y_train, y_test
     return X_train[:,:-1], X_test[:,:-1], X_train[:,-1], X_test[:,-1] 
 
-# TODO: Borrar
+# TODO: borrar solo para debug
 # X_iris, y_iris = carga_datos.X_iris, carga_datos.y_iris
 # print("X_iris.shape",X_iris.shape)
 # X_train, X_test, y_train, y_test = particion_entr_prueba(X_iris, y_iris)
@@ -319,8 +318,6 @@ def particion_entr_prueba(X,y,test=0.20):
 #  Método que devuelve el array de correspondientes probabilidades de pertenecer 
 #  a la clase positiva (la que se ha tomado como clase 1), para cada ejemplo de un 
 #  array E de nuevos ejemplos.
-
-
         
 # * Método clasifica:
 # -------------------
@@ -330,27 +327,18 @@ def particion_entr_prueba(X,y,test=0.20):
 #  clases originales del problema (por ejemplo, "republicano" o "democrata" en el 
 #  problema de los votos).  
 
-
 # Si el clasificador aún no ha sido entrenado, tanto "clasifica" como
 # "clasifica_prob" deben devolver una excepción del siguiente tipo:
 
 class ClasificadorNoEntrenado(Exception): pass
 
-
-
-
 # Ejemplos de uso:
 # ----------------
 
-
-
-# CON LOS DATOS VOTOS:
-        
+# CON LOS DATOS VOTOS:        
 #   
-
 # En primer lugar, separamos los datos en entrenamiento y prueba (los resultados pueden
 # cambiar, ya que esta partición es aleatoria)
-
         
 # In [1]: Xe_votos,Xp_votos,ye_votos,yp_votos            
 #            =particion_entr_prueba(X_votos,y_votos)
@@ -511,14 +499,14 @@ class RegresionLogisticaMiniBatch():
 
 
 # TODO: borrar solo para debug
-X_iris, y_iris = carga_datos.X_iris, carga_datos.y_iris
-classes = ['setosa','versicula','miprima']
-lrmb = RegresionLogisticaMiniBatch(clases=classes)
-lrmb.entrena(X_iris, y_iris, n_epochs=3)
-# lv = lrmb.clasifica_prob(X_iris)
-# print(lv)
-res = lrmb.clasifica(X_iris)
-print(res)
+# X_iris, y_iris = carga_datos.X_iris, carga_datos.y_iris
+# classes = ['setosa','versicula','miprima']
+# lrmb = RegresionLogisticaMiniBatch(clases=classes)
+# lrmb.entrena(X_iris, y_iris) #, n_epochs=3)
+# # lv = lrmb.clasifica_prob(X_iris)
+# # print(lv)
+# res = lrmb.clasifica(X_iris)
+# print(res)
 
 # =================================================
 # EJERCICIO 3: IMPLEMENTACIÓN DE VALIDACIÓN CRUZADA
@@ -580,15 +568,65 @@ print(res)
 
 #------------------------------------------------------------------------------
 
+def from_folds_to_array(X_folds, y_folds, i):
+    X_train, X_test = X_folds[:i] + X_folds[i+1:], X_folds[i]
+    y_train, y_test = y_folds[:i] + y_folds[i+1:], y_folds[i]
 
+    X_train = np.vstack(X_train)
+    X_test = np.asarray(X_test)
+    y_train = np.concatenate(y_train, axis=None)
+    y_test = np.concatenate(y_test, axis=None)
 
+    return X_train, X_test, y_train, y_test
+
+def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,n=5):
+    print("X.shape", X.shape)
+    print("y.shape", y.shape)
+    X_tmp = np.concatenate((X, y[:, None]), axis=1)
+    np.random.shuffle(X_tmp)
+    
+    classes = np.array(list(set(y))) # get classes
+    classes_indexes = {c: [] for c in classes}
+
+    for i in range(X_tmp.shape[0]): #rows
+        # Append into list the row for the key (class) X_tmp[i,-1]
+        classes_indexes[X_tmp[i,-1]].append(X_tmp[i]) 
+
+    scores = []
+
+    for c, values in classes_indexes.items():
+        # Calculate the number of element by flod
+        n_elem = int(len(values)/n)
+        X_data = np.asarray(values)
+        X_data, y_data = X_data[:,:-1], X_data[:,-1] 
+        X_folds = np.split(X_data, np.arange(n_elem+1,len(X_data),n_elem+1))
+        y_folds = np.split(y_data, np.arange(n_elem+1,len(y_data),n_elem+1))
+
+        for i in range(n):
+            X_train, X_test, y_train, y_test = from_folds_to_array(X_folds, y_folds, i)
+
+            # Set classes because it is needed in entrena method
+            if 'clases' not in params:
+                params['clases'] = classes.tolist()
+
+            model = clase_clasificador(**params)
+            model.entrena(X_train, y_train)
+
+            score = rendimiento(model,X_test,y_test)
+            scores.append(score)
+
+    return np.mean(scores)
+
+# TODO: borrar solo para debug
+Xe_cancer, ye_cancer = carga_datos.X_cancer, carga_datos.y_cancer
+r = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},Xe_cancer,ye_cancer,n=5)
+print("result",r)
+# 0.9121095227289917
 
 
 # ===================================================
 # EJERCICIO 4: APLICANDO LOS CLASIFICADORES BINARIOS
 # ===================================================
-
-
 
 # Usando los dos modelos implementados en el ejercicio 3, obtener clasificadores 
 # con el mejor rendimiento posible para los siguientes conjunto de datos:
@@ -601,7 +639,6 @@ print(res)
 # usar validación cruzada para el ajuste (si no, usar el "holdout" del ejercicio 1). 
 
 # Mostrar el proceso realizado en cada caso, y los rendimientos finales obtenidos. 
-
 
 
 
@@ -641,8 +678,6 @@ print(res)
 
 #         ......
         
-
-
 #  Los parámetros de los métodos significan lo mismo que en el
 #  apartado anterior.
 
@@ -664,9 +699,6 @@ print(res)
 # >>> rendimiento(rl_iris,Xp_iris,yp_iris)
 # >>> 0.9607843137254902
 # --------------------------------------------------------------------
-
-
-
 
 # ==============================================
 # EJERCICIO 6: APLICACION A PROBLEMAS MULTICLASE
@@ -719,7 +751,3 @@ print(res)
 # Ajustar los parámetros de tamaño de batch, tasa de aprendizaje y
 # rate_decay para tratar de obtener un rendimiento aceptable (por encima del
 # 75% de aciertos sobre test). 
-
-
-
-
