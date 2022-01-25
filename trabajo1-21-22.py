@@ -167,6 +167,8 @@ import carga_datos
 def particion_entr_prueba(X,y,test=0.20):
     # Maintain correspondence between X and y
     # Note: (n,) is not the same shape of (n,1), casting vector by using [:, None]
+    X_dtype = X.dtype
+    y_dtype = y.dtype
     X_tmp = np.concatenate((X, y[:, None]), axis=1) 
 
     X_train, X_test = [], []
@@ -193,15 +195,40 @@ def particion_entr_prueba(X,y,test=0.20):
     np.random.shuffle(X_train)
     np.random.shuffle(X_test)
     
-    # X_train, X_test, y_train, y_test
-    return X_train[:,:-1], X_test[:,:-1], X_train[:,-1], X_test[:,-1] 
+    X_train, X_test, y_train, y_test = X_train[:,:-1], X_test[:,:-1], X_train[:,-1], X_test[:,-1]
+    # Change dtype according to X 
+    X_train = X_train.astype(X_dtype)
+    X_test = X_test.astype(X_dtype)
+    y_train = y_train.astype(y_dtype)
+    y_test = y_test.astype(y_dtype)
 
-# TODO: borrar solo para debug
-# X_iris, y_iris = carga_datos.X_iris, carga_datos.y_iris
-# print("X_iris.shape",X_iris.shape)
-# X_train, X_test, y_train, y_test = particion_entr_prueba(X_iris, y_iris)
-# print("X_train.shape", X_train.shape)
-# print("y_train.shape", y_train.shape)
+    return X_train, X_test, y_train, y_test 
+
+e1 = False
+if e1:
+    X_votos, y_votos = carga_datos.X_votos, carga_datos.y_votos
+    Xe_votos,Xp_votos,ye_votos,yp_votos=particion_entr_prueba(X_votos,y_votos,test=1/3)
+    print((y_votos.shape[0],ye_votos.shape[0],yp_votos.shape[0]))
+    # Out[2]: (435, 290, 145)
+
+    print(np.unique(y_votos,return_counts=True))
+    # Out[3]: (array(['democrata', 'republicano'], dtype='<U11'), array([267, 168]))
+    print(np.unique(ye_votos,return_counts=True))
+    # Out[4]: (array(['democrata', 'republicano'], dtype='<U11'), array([178, 112]))
+    print(np.unique(yp_votos,return_counts=True))
+    # Out[5]: (array(['democrata', 'republicano'], dtype='<U11'), array([89, 56]))
+
+    X_credito, y_credito = carga_datos.X_credito, carga_datos.y_credito
+    Xe_credito,Xp_credito,ye_credito,yp_credito=particion_entr_prueba(X_credito,y_credito,test=0.4)
+
+    print(np.unique(y_credito,return_counts=True))
+    # Out[7]: (array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([202, 228, 220]))
+
+    print(np.unique(ye_credito,return_counts=True))
+    # Out[8]: (array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([121, 137, 132]))
+
+    print(np.unique(yp_credito,return_counts=True))
+    # Out[9]: (array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([81, 91, 88]))
 
 # ===========================================
 # EJERCICIO 2: REGRESIÓN LOGÍSTICA MINI-BATCH
@@ -213,7 +240,7 @@ def particion_entr_prueba(X,y,test=0.20):
 
 # class RegresionLogisticaMiniBatch():
 
-#    def __init__(self,clases,normalizacion=False,
+#    def __init__(self,normalizacion=False,
 #                 rate=0.1,rate_decay=False,batch_tam=64,
 #                 pesos_iniciales=None):
 
@@ -393,16 +420,18 @@ def rendimiento(clasif,X,y):
 # In[11]: rendimiento(RLMB_cancer,Xp_cancer,yp_cancer)
 # Out[11]: 0.9557522123893806
 
-def normalize(self,X):
-    mean,std = X.mean(axis=0),X.std(axis=0)
+def normalize(X, mean=None, std=None):
+    if mean is None and std is None:
+        mean,std=X.mean(axis=0),X.std(axis=0)
     Xnorm = (X - mean) / std
-    return Xnorm
+    return Xnorm, mean, std
     
 # transform x0 + w·x into w·x
 def transform(X):
-    x0 = np.ones((1,X.shape[0]))
+    x0 = np.ones((X.shape[0], 1))
     # Add x0 in the begining to transform x0 + w·x into w·x
-    Xt = np.hstack((x0.T,X))
+    Xt = np.hstack((x0,X))
+    #Xt = np.append(X, x0, axis=1) TODO: borrar
     return Xt
 
 # perform random shuffle keeping the correspondence
@@ -426,33 +455,44 @@ def batch_reshaping(X, y, batch_size):
         y = np.concatenate((y, fy), axis=0)
     return X,y
 
+def tranform_y(y):
+    classes = np.array(list(set(y))) # get classes
+    yt=np.where(y == classes[0], 0, 1)
+    return yt, classes
+
 class RegresionLogisticaMiniBatch():
 
-    def __init__(self, clases, normalizacion=False, rate=0.1, rate_decay=False, batch_tam=64, pesos_iniciales=None):
-        self.classes = clases
+    def __init__(self, normalizacion=False, rate=0.1, rate_decay=False, batch_tam=64, pesos_iniciales=None):
         self.normalization = normalizacion
         self.rate = rate
         self.rate_decay = rate_decay
         self.batch_size = batch_tam
         self.intial_weight = pesos_iniciales
         self.w = pesos_iniciales # To store the model
+        self.mean = None
+        self.std = None
+        self.classes = None
              
     def entrena(self, entr, clas_entr, n_epochs=1000, reiniciar_pesos=False):
         X_train = np.copy(entr)
         y_train = np.copy(clas_entr)
 
+        y_train, self.classes = tranform_y(y_train)
+
         # Loop control variables
         convergence = False 
         iteration = 0       
 
-        self.normalization = False
+        # TODO: borrar
+        self.normalization = True
         if self.normalization:
-            X_train = normalize(X_train)
+            X_train, self.mean, self.std = normalize(X_train)
 
         if not self.w or reiniciar_pesos:
             # random initialization of weights vector between -1 and 1
             self.w = np.random.uniform(low=-1, high=1, size=(X_train.shape[1]+1,))
         
+        w = self.w
         rate_0, rate_n = self.rate, self.rate
 
         # Main loop, it stops whether converges or reaches the numbers of epochs
@@ -469,14 +509,16 @@ class RegresionLogisticaMiniBatch():
                 Xt_train = transform(Xc_train)
                 # Checking shape of chunk
                 Xt_train, yt_train = batch_reshaping(Xt_train, yt_train, self.batch_size)
-                # generate rate vector to update weights
-                r = np.zeros(self.w.shape[0])
-                r.fill(rate_n)
-                # Stocastic version: wi <- wi + r * (y - o) * xi
-                o = 1 / (1 + np.e ** (-np.dot(Xt_train, self.w))) #sigmoid
-                w = self.w + r * (np.dot(Xt_train.T, (yt_train - o) ))
+                # Stocastic version of weights update: wi <- wi + r * (y - o) * xi
+                o = 1 / (1 + np.e ** (-np.dot(Xt_train, w))) #sigmoid of cost function
                 # Update weights
-                self.w = w
+                w = w + rate_n * ( np.dot(Xt_train.T, (yt_train - o) ))
+
+                if w[0] == float('NaN'):
+                    convergence = True
+                    break
+                print("w",w)
+
 
             if self.rate_decay:
                 rate_n = (rate_0) * (1 / (1 + iteration))
@@ -484,10 +526,15 @@ class RegresionLogisticaMiniBatch():
             iteration  += 1
             #convergence = True # TODO: borrar esto, solo para debug
 
+                # Update weights model
+        self.w = w
+
     def clasifica_prob(self, E):
         if len(self.w) == 0:
             raise ClasificadorNoEntrenado("Clasificador no entrenado")
         
+        if self.mean is None and self.std is None:
+            E = normalize(E, self.mean, self.std)
         Xt = transform(E)
         return 1 / (1 + np.e ** (-np.dot(Xt, self.w)))
 
@@ -497,16 +544,23 @@ class RegresionLogisticaMiniBatch():
         y = np.where(predictions==1,self.classes[1],self.classes[0])
         return np.asarray(y)
 
-
-# TODO: borrar solo para debug
-# X_iris, y_iris = carga_datos.X_iris, carga_datos.y_iris
-# classes = ['setosa','versicula','miprima']
-# lrmb = RegresionLogisticaMiniBatch(clases=classes)
-# lrmb.entrena(X_iris, y_iris) #, n_epochs=3)
-# # lv = lrmb.clasifica_prob(X_iris)
-# # print(lv)
-# res = lrmb.clasifica(X_iris)
-# print(res)
+e2 = False
+if e2:
+    X_votos, y_votos = carga_datos.X_votos, carga_datos.y_votos
+    Xe_votos,Xp_votos,ye_votos,yp_votos=particion_entr_prueba(X_votos,y_votos)
+    RLMB_votos=RegresionLogisticaMiniBatch()
+    RLMB_votos.entrena(Xe_votos,ye_votos, n_epochs=3) #TODO: borrar n_epochs
+    log_v = RLMB_votos.clasifica_prob(Xp_votos)
+    print(log_v)
+    # array([3.90234132e-04, 1.48717603e-11, 3.90234132e-04, 9.99994374e-01, 9.99347533e-01,...]) 
+        
+    predict = RLMB_votos.clasifica(Xp_votos)
+    print(predict)
+    # Out[5]: array(['democrata', 'democrata', 'democrata','republicano',... ], dtype='<U11')
+        
+    score = rendimiento(RLMB_votos,Xp_votos,yp_votos)
+    print(score)
+    # Out[6]: 0.9080459770114943    
 
 # =================================================
 # EJERCICIO 3: IMPLEMENTACIÓN DE VALIDACIÓN CRUZADA
@@ -618,9 +672,9 @@ def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,n=5):
     return np.mean(scores)
 
 # TODO: borrar solo para debug
-Xe_cancer, ye_cancer = carga_datos.X_cancer, carga_datos.y_cancer
-r = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},Xe_cancer,ye_cancer,n=5)
-print("result",r)
+# Xe_cancer, ye_cancer = carga_datos.X_cancer, carga_datos.y_cancer
+# r = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},Xe_cancer,ye_cancer,n=5)
+# print("result",r)
 # 0.9121095227289917
 
 
