@@ -455,10 +455,10 @@ def batch_reshaping(X, y, batch_size):
         y = np.concatenate((y, fy), axis=0)
     return X,y
 
-def tranform_y(y):
-    classes = np.array(list(set(y))) # get classes
+# let's transform 
+def tranform_y(y, classes):
     yt=np.where(y == classes[0], 0, 1)
-    return yt, classes
+    return yt
 
 class RegresionLogisticaMiniBatch():
 
@@ -477,14 +477,14 @@ class RegresionLogisticaMiniBatch():
         X_train = np.copy(entr)
         y_train = np.copy(clas_entr)
 
-        y_train, self.classes = tranform_y(y_train)
+        # Check if we need to transform y from str type to int type
+        self.classes = np.array(list(set(y_train))) # get classes
+        if not y_train.dtype.type is np.int64:
+            y_train = tranform_y(y_train, self.classes)
 
         # Loop control variables
-        convergence = False 
         iteration = 0       
 
-        # TODO: borrar
-        self.normalization = True
         if self.normalization:
             X_train, self.mean, self.std = normalize(X_train)
 
@@ -496,7 +496,7 @@ class RegresionLogisticaMiniBatch():
         rate_0, rate_n = self.rate, self.rate
 
         # Main loop, it stops whether converges or reaches the numbers of epochs
-        while not convergence and iteration < n_epochs:
+        while iteration < n_epochs:
 
             # Random shuffle keeping correspondence
             X_train, y_train = randon_shuffle(X_train,y_train)
@@ -509,32 +509,26 @@ class RegresionLogisticaMiniBatch():
                 Xt_train = transform(Xc_train)
                 # Checking shape of chunk
                 Xt_train, yt_train = batch_reshaping(Xt_train, yt_train, self.batch_size)
-                # Stocastic version of weights update: wi <- wi + r * (y - o) * xi
+                # Stocastic version of weights update: wi <- wi + r * (y - o) * xi where o is sigmoid(-w*x)
                 o = 1 / (1 + np.e ** (-np.dot(Xt_train, w))) #sigmoid of cost function
                 # Update weights
                 w = w + rate_n * ( np.dot(Xt_train.T, (yt_train - o) ))
-
-                if w[0] == float('NaN'):
-                    convergence = True
-                    break
-                print("w",w)
-
 
             if self.rate_decay:
                 rate_n = (rate_0) * (1 / (1 + iteration))
 
             iteration  += 1
-            #convergence = True # TODO: borrar esto, solo para debug
+            
 
-                # Update weights model
+        # Update weights model
         self.w = w
 
     def clasifica_prob(self, E):
         if len(self.w) == 0:
             raise ClasificadorNoEntrenado("Clasificador no entrenado")
         
-        if self.mean is None and self.std is None:
-            E = normalize(E, self.mean, self.std)
+        if not self.mean is None and not self.std is None:
+            E,_,_ = normalize(E, self.mean, self.std)
         Xt = transform(E)
         return 1 / (1 + np.e ** (-np.dot(Xt, self.w)))
 
@@ -549,18 +543,36 @@ if e2:
     X_votos, y_votos = carga_datos.X_votos, carga_datos.y_votos
     Xe_votos,Xp_votos,ye_votos,yp_votos=particion_entr_prueba(X_votos,y_votos)
     RLMB_votos=RegresionLogisticaMiniBatch()
-    RLMB_votos.entrena(Xe_votos,ye_votos, n_epochs=3) #TODO: borrar n_epochs
+    RLMB_votos.entrena(Xe_votos,ye_votos)
     log_v = RLMB_votos.clasifica_prob(Xp_votos)
     print(log_v)
     # array([3.90234132e-04, 1.48717603e-11, 3.90234132e-04, 9.99994374e-01, 9.99347533e-01,...]) 
-        
     predict = RLMB_votos.clasifica(Xp_votos)
     print(predict)
     # Out[5]: array(['democrata', 'democrata', 'democrata','republicano',... ], dtype='<U11')
         
     score = rendimiento(RLMB_votos,Xp_votos,yp_votos)
     print(score)
-    # Out[6]: 0.9080459770114943    
+    # Out[6]: 0.9080459770114943
+
+    X_cancer, y_cancer = carga_datos.X_cancer, carga_datos.y_cancer
+    Xe_cancer,Xp_cancer,ye_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer)
+
+    RLMB_cancer=RegresionLogisticaMiniBatch(normalizacion=True,rate_decay=True)
+
+    RLMB_cancer.entrena(Xe_cancer,ye_cancer)
+
+    log_v = RLMB_cancer.clasifica_prob(Xp_cancer)
+    print(log_v)
+    # Out[9]: array([9.85046885e-01, 8.77579844e-01, 7.81826115e-07,..])
+
+    predict = RLMB_cancer.clasifica(Xp_cancer)
+    print(predict)
+    # Out[10]: array([1, 1, 0,...])
+
+    score = rendimiento(RLMB_cancer,Xp_cancer,yp_cancer)
+    print(score)
+    # Out[11]: 0.9557522123893806
 
 # =================================================
 # EJERCICIO 3: IMPLEMENTACIÓN DE VALIDACIÓN CRUZADA
