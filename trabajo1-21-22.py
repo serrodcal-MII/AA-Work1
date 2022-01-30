@@ -468,7 +468,7 @@ class RegresionLogisticaMiniBatch():
         self.rate_decay = rate_decay
         self.batch_size = batch_tam
         self.intial_weight = pesos_iniciales
-        self.w = pesos_iniciales # To store the model
+        self.w = pesos_iniciales # model
         self.mean = None
         self.std = None
         self.classes = None
@@ -529,6 +529,7 @@ class RegresionLogisticaMiniBatch():
         
         if not self.mean is None and not self.std is None:
             E,_,_ = normalize(E, self.mean, self.std)
+
         Xt = transform(E)
         return 1 / (1 + np.e ** (-np.dot(Xt, self.w)))
 
@@ -536,6 +537,7 @@ class RegresionLogisticaMiniBatch():
         predict_proba = self.clasifica_prob(E)
         predictions = (predict_proba > .5).astype(int)
         y = np.where(predictions==1,self.classes[1],self.classes[0])
+        
         return np.asarray(y)
 
 e2 = False
@@ -634,23 +636,9 @@ if e2:
 
 #------------------------------------------------------------------------------
 
-def from_folds_to_array(X_folds, y_folds, i):
-    X_train, X_test = X_folds[:i] + X_folds[i+1:], X_folds[i]
-    y_train, y_test = y_folds[:i] + y_folds[i+1:], y_folds[i]
-
-    X_train = np.vstack(X_train)
-    X_test = np.asarray(X_test)
-    y_train = np.concatenate(y_train, axis=None)
-    y_test = np.concatenate(y_test, axis=None)
-
-    return X_train, X_test, y_train, y_test
-
 def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,n=5):
-    print("X.shape", X.shape)
-    print("y.shape", y.shape)
     X_tmp = np.concatenate((X, y[:, None]), axis=1)
-    np.random.shuffle(X_tmp)
-    
+
     classes = np.array(list(set(y))) # get classes
     classes_indexes = {c: [] for c in classes}
 
@@ -659,27 +647,23 @@ def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,n=5):
         classes_indexes[X_tmp[i,-1]].append(X_tmp[i]) 
 
     scores = []
+    for i in range(n):
+        train_set, test_set = [], []
+        for c, values in classes_indexes.items():
+            s = int(len(values)/n) # fold size
+            train_set.extend(values[:i*s] + values[(i*s)+s:])
+            test_set.extend(values[i*s:(i*s)+s])
 
-    for c, values in classes_indexes.items():
-        # Calculate the number of element by flod
-        n_elem = int(len(values)/n)
-        X_data = np.asarray(values)
-        X_data, y_data = X_data[:,:-1], X_data[:,-1] 
-        X_folds = np.split(X_data, np.arange(n_elem+1,len(X_data),n_elem+1))
-        y_folds = np.split(y_data, np.arange(n_elem+1,len(y_data),n_elem+1))
+        X_train, X_test = np.asarray(train_set), np.asarray(test_set)
+        np.random.shuffle(X_train)
+        np.random.shuffle(X_test)
+        X_train, X_test, y_train, y_test = X_train[:,:-1], X_test[:,:-1], X_train[:,-1], X_test[:,-1]
 
-        for i in range(n):
-            X_train, X_test, y_train, y_test = from_folds_to_array(X_folds, y_folds, i)
+        model = clase_clasificador(**params)
+        model.entrena(X_train, y_train)
 
-            # Set classes because it is needed in entrena method
-            if 'clases' not in params:
-                params['clases'] = classes.tolist()
-
-            model = clase_clasificador(**params)
-            model.entrena(X_train, y_train)
-
-            score = rendimiento(model,X_test,y_test)
-            scores.append(score)
+        score = rendimiento(model,X_test,y_test)
+        scores.append(score)
 
     return np.mean(scores)
 
@@ -688,6 +672,21 @@ def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,n=5):
 # r = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},Xe_cancer,ye_cancer,n=5)
 # print("result",r)
 # 0.9121095227289917
+
+e3 = True
+if e3:
+    X_cancer, y_cancer = carga_datos.X_cancer, carga_datos.y_cancer
+    Xe_cancer,Xp_cancer,ye_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer)
+    score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},Xe_cancer,ye_cancer,n=5)
+    print(score)
+    # 0.9121095227289917
+
+    LR16=RegresionLogisticaMiniBatch(batch_tam=16,rate_decay=True)
+    LR16.entrena(Xe_cancer,ye_cancer)
+
+    score = rendimiento(LR16,Xp_cancer,yp_cancer)
+    print(score)
+    # 0.9203539823008849
 
 
 # ===================================================
