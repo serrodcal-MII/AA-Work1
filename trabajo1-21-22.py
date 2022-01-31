@@ -101,9 +101,6 @@ import carga_datos
 #   comprimido. Para preparar estos datos habrá que escribir funciones que los
 #   extraigan de los ficheros de texto (más adelante se dan más detalles). 
 
-
-
-
 # ===========================================================
 # EJERCICIO 1: SEPARACIÓN EN ENTRENAMIENTO Y PRUEBA (HOLDOUT)
 # ===========================================================
@@ -145,7 +142,6 @@ import carga_datos
 # aparecen los datos en Xe_votos,ye_votos y en Xp_votos,yp_votos, se preserva
 # la correspondencia original que hay en X_votos,y_votos.
 
-
 # Otro ejemplo con más de dos clases:
 
 # In[6]: Xe_credito,Xp_credito,ye_credito,yp_credito               
@@ -173,7 +169,7 @@ def particion_entr_prueba(X,y,test=0.20):
 
     X_train, X_test = [], []
 
-    classes = np.array(list(set(y))) # get classes
+    classes = np.unique(y) # get classes
     classes_indexes = {c: [] for c in classes}
 
     for i in range(X_tmp.shape[0]): #rows
@@ -196,7 +192,7 @@ def particion_entr_prueba(X,y,test=0.20):
     np.random.shuffle(X_test)
     
     X_train, X_test, y_train, y_test = X_train[:,:-1], X_test[:,:-1], X_train[:,-1], X_test[:,-1]
-    # Change dtype according to X 
+    # Change dtype according to X and y
     X_train = X_train.astype(X_dtype)
     X_test = X_test.astype(X_dtype)
     y_train = y_train.astype(y_dtype)
@@ -230,10 +226,10 @@ if e1:
     print(np.unique(yp_credito,return_counts=True))
     # Out[9]: (array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([81, 91, 88]))
 
+
 # ===========================================
 # EJERCICIO 2: REGRESIÓN LOGÍSTICA MINI-BATCH
 # ===========================================
-
 
 # Se pide implementar el clasificador de regresión logística mini-batch 
 # a través de una clase python, que ha de tener la siguiente estructura:
@@ -253,23 +249,18 @@ if e1:
 
 #     def clasifica_prob(self,E):
 
-
 #         ......
 
 #     def clasifica(self,E):
 
-
 #         ......
         
-
 # Explicamos a continuación cada uno de los métodos:
-
 
 # * Constructor de la clase:
 # --------------------------
 
 #  El constructor debe tener los siguientes argumentos de entrada:
-
 
 #  - El parámetro normalizacion, que puede ser True o False (False por
 #    defecto). Indica si los datos se tienen que normalizar, tanto para el
@@ -301,8 +292,6 @@ if e1:
 #  - pesos_iniciales: Si es None, los pesos iniciales se inician 
 #    aleatoriamente. Si no, debe proporcionar un array de pesos que se 
 #    tomarán como pesos iniciales.     
-
-# 
 
 # * Método entrena:
 # -----------------
@@ -337,7 +326,6 @@ if e1:
 #  Se pide una VERSIÓN ESTOCÁSTICA, en la que en cada epoch se asegura que 
 #  se recorren todos los ejemplos del conjunto de entrenamiento, 
 #  en un orden ALEATORIO, aunque agrupados en grupos del tamaño indicado. 
-
 
 # * Método clasifica_prob:
 # ------------------------
@@ -478,7 +466,7 @@ class RegresionLogisticaMiniBatch():
         y_train = np.copy(clas_entr)
 
         # Check if we need to transform y from str type to int type
-        self.classes = np.array(list(set(y_train))) # get classes
+        self.classes = np.unique(y_train) # get classes
         if not y_train.dtype.type is np.int64:
             y_train = tranform_y(y_train, self.classes)
 
@@ -488,7 +476,7 @@ class RegresionLogisticaMiniBatch():
         if self.normalization:
             X_train, self.mean, self.std = normalize(X_train)
 
-        if not self.w or reiniciar_pesos:
+        if self.w is None or reiniciar_pesos:
             # random initialization of weights vector between -1 and 1
             self.w = np.random.uniform(low=-1, high=1, size=(X_train.shape[1]+1,))
         
@@ -576,6 +564,7 @@ if e2:
     print(score)
     # Out[11]: 0.9557522123893806
 
+
 # =================================================
 # EJERCICIO 3: IMPLEMENTACIÓN DE VALIDACIÓN CRUZADA
 # =================================================
@@ -637,9 +626,11 @@ if e2:
 #------------------------------------------------------------------------------
 
 def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,n=5):
+    X_dtype = X.dtype
+    y_dtype = y.dtype
     X_tmp = np.concatenate((X, y[:, None]), axis=1)
 
-    classes = np.array(list(set(y))) # get classes
+    classes = np.unique(y) # get classes
     classes_indexes = {c: [] for c in classes}
 
     for i in range(X_tmp.shape[0]): #rows
@@ -659,6 +650,12 @@ def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,n=5):
         np.random.shuffle(X_test)
         X_train, X_test, y_train, y_test = X_train[:,:-1], X_test[:,:-1], X_train[:,-1], X_test[:,-1]
 
+        # Change dtype according to X and y
+        X_train = X_train.astype(X_dtype)
+        X_test = X_test.astype(X_dtype)
+        y_train = y_train.astype(y_dtype)
+        y_test = y_test.astype(y_dtype)
+
         model = clase_clasificador(**params)
         model.entrena(X_train, y_train)
 
@@ -667,13 +664,7 @@ def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,n=5):
 
     return np.mean(scores)
 
-# TODO: borrar solo para debug
-# Xe_cancer, ye_cancer = carga_datos.X_cancer, carga_datos.y_cancer
-# r = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},Xe_cancer,ye_cancer,n=5)
-# print("result",r)
-# 0.9121095227289917
-
-e3 = True
+e3 = False
 if e3:
     X_cancer, y_cancer = carga_datos.X_cancer, carga_datos.y_cancer
     Xe_cancer,Xp_cancer,ye_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer)
@@ -705,6 +696,26 @@ if e3:
 
 # Mostrar el proceso realizado en cada caso, y los rendimientos finales obtenidos. 
 
+e4 = False
+if e4:
+    # Votos
+    X_votos, y_votos = carga_datos.X_votos, carga_datos.y_votos
+    Xe_votos,Xp_votos,ye_votos,yp_votos=particion_entr_prueba(X_votos,y_votos)
+    score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},Xe_votos,ye_votos,n=5)
+    print(score)
+
+    # Cancer
+    X_cancer, y_cancer = carga_datos.X_cancer, carga_datos.y_cancer
+    Xe_cancer,Xp_cancer,ye_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer)
+    score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},Xe_cancer,ye_cancer,n=5)
+    print(score)
+
+    # IMDB
+    X_train_imdb, X_test_imdb, y_train_imdb, y_test_imdb = carga_datos.X_train_imdb, carga_datos.X_test_imdb, carga_datos.y_train_imdb, carga_datos.y_test_imdb
+    score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},X_train_imdb,y_train_imdb,n=5)
+    print(score)
+
+    # TODO: hacer pruebas con parámetros
 
 
 # =====================================
@@ -714,18 +725,14 @@ if e3:
 # Técnica "One vs Rest" (Uno frente al Resto)
 # -------------------------------------------
 
-
 # Se pide implementar la técnica "One vs Rest" (Uno frente al Resto),
 # para obtener un clasificador multiclase a partir del clasificador
 # binario definido en el apartado anterior.
-
 
 #  En concreto, se pide implementar una clase python
 #  RegresionLogisticaOvR con la siguiente estructura, y que implemente
 #  el entrenamiento y la clasificación siguiendo el método "One vs
 #  Rest" tal y como se ha explicado en las diapositivas del módulo.
-
- 
 
 # class RegresionLogisticaOvR():
 
@@ -748,7 +755,6 @@ if e3:
 
 #  Un ejemplo de sesión, con el problema del iris:
 
-
 # --------------------------------------------------------------------
 
 # In[1] Xe_iris,Xp_iris,ye_iris,yp_iris          
@@ -765,10 +771,65 @@ if e3:
 # >>> 0.9607843137254902
 # --------------------------------------------------------------------
 
+import copy
+class RegresionLogisticaOvR():
+
+    def __init__(self,normalizacion=False,rate=0.1,rate_decay=False,batch_tam=64):
+        self.normalization = normalizacion
+        self.rate = rate
+        self.rate_decay = rate_decay
+        self.batch_tam = batch_tam
+        self.w = {}
+        self.classes = None
+         
+    def entrena(self,entr,clas_entr,n_epochs=1000):
+        self.classes = np.unique(clas_entr) # get classes
+
+        for c in self.classes:
+            y=np.where(clas_entr == c, 1, 0) # That class is one, the rest is zero
+            LRMB=RegresionLogisticaMiniBatch(normalizacion = self.normalization, batch_tam=self.batch_tam, rate_decay=self.rate_decay, rate=self.rate)
+            LRMB.entrena(entr,y, n_epochs=n_epochs)
+            self.w[c] = copy.copy(LRMB.w) # store model (weight) for that class
+
+    def clasifica(self,E):
+        log_v = []
+        for c in self.classes: # Applying each model stored in self.w
+            LRMB=RegresionLogisticaMiniBatch(normalizacion = self.normalization, batch_tam=self.batch_tam, rate_decay=self.rate_decay, rate=self.rate, pesos_iniciales=self.w[c])
+            log_v.append(LRMB.clasifica_prob(E))
+
+        y = []
+        for i in range(E.shape[0]): # for each instance
+            log_v_tmp = []
+            for j in range(len(self.classes)): # get log_v for any class
+                log_v_tmp.append(log_v[j][i])
+
+            a = np.asarray(log_v_tmp) 
+            c = np.argmax(a) # get index of max class
+            y.append(self.classes[c]) # save the correct clasification according to self.classes
+
+        return np.asarray(y)
+
+e5 = False
+if e5:
+    X_iris, y_iris = carga_datos.X_iris, carga_datos.y_iris
+    Xe_iris,Xp_iris,ye_iris,yp_iris=particion_entr_prueba(X_iris,y_iris,test=1/3)
+
+    rl_iris=RegresionLogisticaOvR(rate=0.001,batch_tam=20)
+
+    rl_iris.entrena(Xe_iris,ye_iris)
+
+    score = rendimiento(rl_iris,Xe_iris,ye_iris)
+    print(score)
+    # 0.9797979797979798
+
+    score = rendimiento(rl_iris,Xp_iris,yp_iris)
+    print(score)
+    # 0.9607843137254902
+
+
 # ==============================================
 # EJERCICIO 6: APLICACION A PROBLEMAS MULTICLASE
 # ==============================================
-
 
 # ---------------------------------------------------------
 # 6.1) Conjunto de datos de la concesión de crédito
@@ -783,9 +844,48 @@ if e3:
 # "codificación one-hot", descrita en el tema "Preprocesado e ingeniería de características".
 # Se pide implementar esta transformación (directamete, SIN USAR Scikt Learn ni Pandas). 
 
+def to_int(X, classes):
+    for i in range(len(classes)):
+        X = np.where(X == classes[i], i, X)
 
-     
-                
+    return X
+
+def one_hot_encode(X, index=False):
+    columns = []
+    res = np.zeros((X.shape[0],1))
+
+    for i in range(X.shape[1]):
+        classes = list(set(X[:,i])) # get all classes
+        oha = np.zeros((X.shape[0], len(classes)), dtype=np.int64) # One hot array for each column initialize with zeros
+
+        X1 = to_int(X[:,i],classes)
+        X1 = X1.astype(np.int64)
+        
+        oha[np.arange(X1.size),X1] = 1
+        
+        res = np.hstack((res,oha))
+        
+        if index: # If concat index to columen name (i.e. classification to 0-classification)
+            classes = list(map(lambda s: str(i) + '-' + s, classes)) # Assing index to identify classes
+
+        columns.extend(classes)
+
+    return res[:,1:],columns
+
+X_credito, y_credito = carga_datos.X_credito, carga_datos.y_credito
+Xt_credito,columns = one_hot_encode(X_credito, index=True)
+
+Xe_credito,Xp_credito,ye_credito,yp_credito=particion_entr_prueba(Xt_credito,y_credito,test=1/3)
+
+rl_credito=RegresionLogisticaOvR(rate=0.001,batch_tam=20)
+
+rl_credito.entrena(Xe_credito,ye_credito)
+
+score = rendimiento(rl_credito,Xe_credito,ye_credito)
+print(score)
+
+score = rendimiento(rl_credito,Xp_credito,yp_credito)
+print(score)
 
 
 # ---------------------------------------------------------
