@@ -872,20 +872,22 @@ def one_hot_encode(X, index=False):
 
     return res[:,1:],columns
 
-X_credito, y_credito = carga_datos.X_credito, carga_datos.y_credito
-Xt_credito,columns = one_hot_encode(X_credito, index=True)
+e6_1 = True
+if e6_1:
+    X_credito, y_credito = carga_datos.X_credito, carga_datos.y_credito
+    Xt_credito,columns = one_hot_encode(X_credito, index=True)
 
-Xe_credito,Xp_credito,ye_credito,yp_credito=particion_entr_prueba(Xt_credito,y_credito,test=1/3)
+    Xe_credito,Xp_credito,ye_credito,yp_credito=particion_entr_prueba(Xt_credito,y_credito,test=1/3)
 
-rl_credito=RegresionLogisticaOvR(rate=0.001,batch_tam=20)
+    rl_credito=RegresionLogisticaOvR(rate=0.001,batch_tam=20)
 
-rl_credito.entrena(Xe_credito,ye_credito)
+    rl_credito.entrena(Xe_credito,ye_credito)
 
-score = rendimiento(rl_credito,Xe_credito,ye_credito)
-print(score)
+    score = rendimiento(rl_credito,Xe_credito,ye_credito)
+    print(score)
 
-score = rendimiento(rl_credito,Xp_credito,yp_credito)
-print(score)
+    score = rendimiento(rl_credito,Xp_credito,yp_credito)
+    print(score)
 
 
 # ---------------------------------------------------------
