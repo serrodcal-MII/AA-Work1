@@ -233,6 +233,7 @@ if e1:
     print('Resultado para yp_credito:',np.unique(yp_credito,return_counts=True))
     print("Esperado para yp_credito: array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([81, 91, 88])")
     # (array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([81, 91, 88]))
+    print('')
 
 # ===========================================
 # EJERCICIO 2: REGRESIÓN LOGÍSTICA MINI-BATCH
