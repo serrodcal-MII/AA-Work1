@@ -10,7 +10,6 @@
 # NOMBRE: Sergio
 # ----------------------------------------------------------------------------
 
-
 # *****************************************************************************
 # HONESTIDAD ACADÉMICA Y COPIAS: un trabajo práctico es un examen, por lo que
 # debe realizarse de manera individual. La discusión y el intercambio de
@@ -27,13 +26,8 @@
 # PUDIERAN TOMAR.  
 # *****************************************************************************
 
-
 # IMPORTANTE: NO CAMBIAR EL NOMBRE NI A ESTE ARCHIVO NI A LAS CLASES Y MÉTODOS
 # QUE SE PIDEN
-
-
-
-
 
 # ========================
 # IMPORTANTE: USO DE NUMPY
@@ -202,30 +196,43 @@ def particion_entr_prueba(X,y,test=0.20):
 
 e1 = False
 if e1:
+    print('Ejercicio 1')
+    print('')
     X_votos, y_votos = carga_datos.X_votos, carga_datos.y_votos
     Xe_votos,Xp_votos,ye_votos,yp_votos=particion_entr_prueba(X_votos,y_votos,test=1/3)
-    print((y_votos.shape[0],ye_votos.shape[0],yp_votos.shape[0]))
-    # Out[2]: (435, 290, 145)
+    print('Partición de votos:')
+    print('Resultado:',(y_votos.shape[0],ye_votos.shape[0],yp_votos.shape[0]))
+    print('Esperado: (435, 290, 145)')
+    # (435, 290, 145)
+    print('')
 
-    print(np.unique(y_votos,return_counts=True))
-    # Out[3]: (array(['democrata', 'republicano'], dtype='<U11'), array([267, 168]))
-    print(np.unique(ye_votos,return_counts=True))
-    # Out[4]: (array(['democrata', 'republicano'], dtype='<U11'), array([178, 112]))
-    print(np.unique(yp_votos,return_counts=True))
-    # Out[5]: (array(['democrata', 'republicano'], dtype='<U11'), array([89, 56]))
+    print('Clases y contador para partición de votos:')
+    print('Resultado para y_votos:',np.unique(y_votos,return_counts=True))
+    print("Esperado para y_votos: array(['democrata', 'republicano'], dtype='<U11'), array([267, 168])")
+    # (array(['democrata', 'republicano'], dtype='<U11'), array([267, 168]))
+    print('Resultado para ye_votos:',np.unique(ye_votos,return_counts=True))
+    print("Esperado para ye_votos: array(['democrata', 'republicano'], dtype='<U11'), array([178, 112])")
+    # (array(['democrata', 'republicano'], dtype='<U11'), array([178, 112]))
+    print('Resultado para yp_votos:',np.unique(yp_votos,return_counts=True))
+    print("Esperado para yp_votos: array(['democrata', 'republicano'], dtype='<U11'), array([89, 56])")
+    # (array(['democrata', 'republicano'], dtype='<U11'), array([89, 56]))
+    print('')
 
     X_credito, y_credito = carga_datos.X_credito, carga_datos.y_credito
     Xe_credito,Xp_credito,ye_credito,yp_credito=particion_entr_prueba(X_credito,y_credito,test=0.4)
 
-    print(np.unique(y_credito,return_counts=True))
-    # Out[7]: (array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([202, 228, 220]))
+    print('Partición de crédito:')
+    print('Resultado para y_credito:',np.unique(y_credito,return_counts=True))
+    print("Esperado para y_credito: array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([202, 228, 220])")
+    # (array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([202, 228, 220]))
 
-    print(np.unique(ye_credito,return_counts=True))
-    # Out[8]: (array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([121, 137, 132]))
+    print('Resultado para ye_credito:',np.unique(ye_credito,return_counts=True))
+    print("Esperado para ye_credito: array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([121, 137, 132])")
+    # (array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([121, 137, 132]))
 
-    print(np.unique(yp_credito,return_counts=True))
-    # Out[9]: (array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([81, 91, 88]))
-
+    print('Resultado para yp_credito:',np.unique(yp_credito,return_counts=True))
+    print("Esperado para yp_credito: array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([81, 91, 88])")
+    # (array(['conceder', 'estudiar', 'no conceder'], dtype='<U11'), array([81, 91, 88]))
 
 # ===========================================
 # EJERCICIO 2: REGRESIÓN LOGÍSTICA MINI-BATCH
@@ -432,17 +439,6 @@ def get_chunks(X,y,n):
     a = np.concatenate((X, y[:, None]), axis=1) 
     return np.split(a, np.arange(n,len(a),n))
 
-# Last batch size could be less than batch_size
-def batch_reshaping(X, y, batch_size):
-    d = batch_size + 1 - X.shape[0]
-    if d > 0:
-        # Transforn Xt_train into (batch_size+1,X_train.shape[1])
-        fx = np.ndarray(shape=(d,X.shape[1]))
-        fy  = np.zeros(d)
-        X = np.concatenate((X, fx), axis=0)
-        y = np.concatenate((y, fy), axis=0)
-    return X,y
-
 # let's transform 
 def tranform_y(y, classes):
     yt=np.where(y == classes[0], 0, 1)
@@ -495,8 +491,6 @@ class RegresionLogisticaMiniBatch():
                 Xc_train, yt_train = chunk[:,:-1], chunk[:,-1]
                 # x0 + w·x into w·x
                 Xt_train = transform(Xc_train)
-                # Checking shape of chunk
-                Xt_train, yt_train = batch_reshaping(Xt_train, yt_train, self.batch_size)
                 # Stocastic version of weights update: wi <- wi + r * (y - o) * xi where o is sigmoid(-w*x)
                 o = 1 / (1 + np.e ** (-np.dot(Xt_train, w))) #sigmoid of cost function
                 # Update weights
@@ -528,22 +522,28 @@ class RegresionLogisticaMiniBatch():
         
         return np.asarray(y)
 
-e2 = False
+e2 = True
 if e2:
+    print('Ejercicio 2')
+    print('')
     X_votos, y_votos = carga_datos.X_votos, carga_datos.y_votos
     Xe_votos,Xp_votos,ye_votos,yp_votos=particion_entr_prueba(X_votos,y_votos)
     RLMB_votos=RegresionLogisticaMiniBatch()
     RLMB_votos.entrena(Xe_votos,ye_votos)
     log_v = RLMB_votos.clasifica_prob(Xp_votos)
-    print(log_v)
+    print('Resultado log-verosimilitud para votos',log_v[:5])
+    print('Esperado log-verosimilitud para votos [3.90234132e-04, 1.48717603e-11, 3.90234132e-04, 9.99994374e-01, 9.99347533e-01]')
     # array([3.90234132e-04, 1.48717603e-11, 3.90234132e-04, 9.99994374e-01, 9.99347533e-01,...]) 
     predict = RLMB_votos.clasifica(Xp_votos)
-    print(predict)
-    # Out[5]: array(['democrata', 'democrata', 'democrata','republicano',... ], dtype='<U11')
+    print('Resultado predicción para votos',predict[:4])
+    print("Esperado predicción para votos ['democrata', 'democrata', 'democrata','republicano']")
+    # array(['democrata', 'democrata', 'democrata','republicano',... ], dtype='<U11')
         
     score = rendimiento(RLMB_votos,Xp_votos,yp_votos)
-    print(score)
-    # Out[6]: 0.9080459770114943
+    print('Resultado rendimiento para votos',score)
+    print('Esperado rendimiento para votos 0.9080459770114943')
+    # 0.9080459770114943
+    print('')
 
     X_cancer, y_cancer = carga_datos.X_cancer, carga_datos.y_cancer
     Xe_cancer,Xp_cancer,ye_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer)
@@ -553,16 +553,23 @@ if e2:
     RLMB_cancer.entrena(Xe_cancer,ye_cancer)
 
     log_v = RLMB_cancer.clasifica_prob(Xp_cancer)
-    print(log_v)
-    # Out[9]: array([9.85046885e-01, 8.77579844e-01, 7.81826115e-07,..])
+    #print(log_v)
+    print('Resultado log-verosimilitud para cancer',log_v[:3])
+    print('Esperado log-verosimilitud para cancer [9.85046885e-01, 8.77579844e-01, 7.81826115e-07]')
+    # array([9.85046885e-01, 8.77579844e-01, 7.81826115e-07,..])
 
     predict = RLMB_cancer.clasifica(Xp_cancer)
-    print(predict)
-    # Out[10]: array([1, 1, 0,...])
+    #print(predict)
+    print('Resultado predicción para cancer',predict[:3])
+    print('Esperado predicción para cancer [1, 1, 0,...]')
+    # array([1, 1, 0,...])
 
     score = rendimiento(RLMB_cancer,Xp_cancer,yp_cancer)
-    print(score)
-    # Out[11]: 0.9557522123893806
+    #print(score)
+    print('Resultado rendimiento para cancer',score)
+    print('Esperado rendimiento para cancer 0.9557522123893806')
+    # 0.9557522123893806
+    print('')
 
 
 # =================================================
@@ -664,20 +671,33 @@ def rendimiento_validacion_cruzada(clase_clasificador,params,X,y,n=5):
 
     return np.mean(scores)
 
+# See: https://www.statology.org/runtimewarning-overflow-encountered-in-exp/
+import warnings
+
+#suppress warnings
+warnings.filterwarnings('ignore')
+
 e3 = False
 if e3:
+    print('Ejercicio 3')
+    print('')
     X_cancer, y_cancer = carga_datos.X_cancer, carga_datos.y_cancer
     Xe_cancer,Xp_cancer,ye_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer)
     score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},Xe_cancer,ye_cancer,n=5)
-    print(score)
+    #print(score)
+    print('Resultado rendimiento para cancer en validación cruzada',score)
+    print('Esperado rendimiento para cancer en validación cruzada 0.9121095227289917')
     # 0.9121095227289917
 
     LR16=RegresionLogisticaMiniBatch(batch_tam=16,rate_decay=True)
     LR16.entrena(Xe_cancer,ye_cancer)
 
     score = rendimiento(LR16,Xp_cancer,yp_cancer)
-    print(score)
+    #print(score)
+    print('Resultado rendimiento para cancer en Regresión Logistica Mini Batch',score)
+    print('Esperado rendimiento para cancer en Regresión Logistica Mini Batch 0.9121095227289917')
     # 0.9203539823008849
+    print('')
 
 
 # ===================================================
@@ -698,22 +718,28 @@ if e3:
 
 e4 = False
 if e4:
+    print('Ejercicio 4')
+    print('')
     # Votos
     X_votos, y_votos = carga_datos.X_votos, carga_datos.y_votos
     Xe_votos,Xp_votos,ye_votos,yp_votos=particion_entr_prueba(X_votos,y_votos)
     score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},Xe_votos,ye_votos,n=5)
-    print(score)
+    #print(score)
+    print('Resultado rendimiento para votos en validación cruzada',score)
 
     # Cancer
     X_cancer, y_cancer = carga_datos.X_cancer, carga_datos.y_cancer
     Xe_cancer,Xp_cancer,ye_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer)
     score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},Xe_cancer,ye_cancer,n=5)
-    print(score)
+    #print(score)
+    print('Resultado rendimiento para cancer en validación cruzada',score)
 
     # IMDB
     X_train_imdb, X_test_imdb, y_train_imdb, y_test_imdb = carga_datos.X_train_imdb, carga_datos.X_test_imdb, carga_datos.y_train_imdb, carga_datos.y_test_imdb
     score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},X_train_imdb,y_train_imdb,n=5)
-    print(score)
+    #print(score)
+    print('Resultado rendimiento para imdb en validación cruzada',score)
+    print('')
 
     # TODO: hacer pruebas con parámetros
 
@@ -811,6 +837,8 @@ class RegresionLogisticaOvR():
 
 e5 = False
 if e5:
+    print('Ejercicio 5')
+    print('')
     X_iris, y_iris = carga_datos.X_iris, carga_datos.y_iris
     Xe_iris,Xp_iris,ye_iris,yp_iris=particion_entr_prueba(X_iris,y_iris,test=1/3)
 
@@ -819,12 +847,15 @@ if e5:
     rl_iris.entrena(Xe_iris,ye_iris)
 
     score = rendimiento(rl_iris,Xe_iris,ye_iris)
-    print(score)
+    print('Resultado rendimiento para Xe_iris en Regresión Logística One-Hot',score)
+    print('Esperado rendimiento para Xe_iris en Regresión Logística One-Hot 0.9797979797979798')
     # 0.9797979797979798
 
     score = rendimiento(rl_iris,Xp_iris,yp_iris)
-    print(score)
+    print('Resultado rendimiento para Xp_iris en Regresión Logística One-Hot',score)
+    print('Esperado rendimiento para Xp_iris en Regresión Logística One-Hot 0.9607843137254902')
     # 0.9607843137254902
+    print('')
 
 
 # ==============================================
@@ -865,7 +896,7 @@ def one_hot_encode(X, index=False):
         
         res = np.hstack((res,oha))
         
-        if index: # If concat index to columen name (i.e. classification to 0-classification)
+        if index: # If concat index to column name (i.e. classification to 0-classification)
             classes = list(map(lambda s: str(i) + '-' + s, classes)) # Assing index to identify classes
 
         columns.extend(classes)
@@ -874,6 +905,8 @@ def one_hot_encode(X, index=False):
 
 e6_1 = True
 if e6_1:
+    print('Ejercicio 6.1')
+    print('')
     X_credito, y_credito = carga_datos.X_credito, carga_datos.y_credito
     Xt_credito,columns = one_hot_encode(X_credito, index=True)
 
@@ -884,10 +917,11 @@ if e6_1:
     rl_credito.entrena(Xe_credito,ye_credito)
 
     score = rendimiento(rl_credito,Xe_credito,ye_credito)
-    print(score)
+    print('Resultado rendimiento para Xe_credito en Regresión Logística One-Hot',score)
 
     score = rendimiento(rl_credito,Xp_credito,yp_credito)
-    print(score)
+    print('Resultado rendimiento para Xp_credito en Regresión Logística One-Hot',score)
+    print('')
 
 
 # ---------------------------------------------------------
