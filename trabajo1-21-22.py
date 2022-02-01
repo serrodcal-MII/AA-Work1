@@ -522,7 +522,7 @@ class RegresionLogisticaMiniBatch():
         
         return np.asarray(y)
 
-e2 = True
+e2 = False
 if e2:
     print('Ejercicio 2')
     print('')
@@ -716,33 +716,42 @@ if e3:
 
 # Mostrar el proceso realizado en cada caso, y los rendimientos finales obtenidos. 
 
-e4 = False
+e4 = True
 if e4:
     print('Ejercicio 4')
     print('')
     # Votos
     X_votos, y_votos = carga_datos.X_votos, carga_datos.y_votos
     Xe_votos,Xp_votos,ye_votos,yp_votos=particion_entr_prueba(X_votos,y_votos)
+    
     score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},Xe_votos,ye_votos,n=5)
-    #print(score)
-    print('Resultado rendimiento para votos en validación cruzada',score)
+    print('Resultado rendimiento para votos en validación cruzada con {"batch_tam":16,"rate_decay":True} y n=5',score)
+
+    score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":30,"rate_decay":True,"rate":0.001},Xe_votos,ye_votos,n=8)
+    print('Resultado rendimiento para votos en validación cruzada con {"batch_tam":30,"rate_decay":True,"rate":0.001} y n=8',score)
 
     # Cancer
     X_cancer, y_cancer = carga_datos.X_cancer, carga_datos.y_cancer
     Xe_cancer,Xp_cancer,ye_cancer,yp_cancer=particion_entr_prueba(X_cancer,y_cancer)
+    
     score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},Xe_cancer,ye_cancer,n=5)
-    #print(score)
-    print('Resultado rendimiento para cancer en validación cruzada',score)
+    print('Resultado rendimiento para cancer en validación cruzada con {"batch_tam":16,"rate_decay":True} y n=5',score)
+
+    score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":30,"rate_decay":True,"rate":0.001},Xe_cancer,ye_cancer,n=8)
+    print('Resultado rendimiento para cancer en validación cruzada con {"batch_tam":30,"rate_decay":True,"rate":0.001} y n=8',score)
 
     # IMDB
     X_train_imdb, X_test_imdb, y_train_imdb, y_test_imdb = carga_datos.X_train_imdb, carga_datos.X_test_imdb, carga_datos.y_train_imdb, carga_datos.y_test_imdb
+    
     score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":16,"rate_decay":True},X_train_imdb,y_train_imdb,n=5)
-    #print(score)
-    print('Resultado rendimiento para imdb en validación cruzada',score)
+    print('Resultado rendimiento para imdb en validación cruzada con {"batch_tam":16,"rate_decay":True} y n=5',score)
+
+    score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":30,"rate_decay":True,"rate":0.001},X_train_imdb,y_train_imdb,n=8)
+    print('Resultado rendimiento para imdb en validación cruzada con {"batch_tam":30,"rate_decay":True,"rate":0.001} y n=8',score)
+
     print('')
 
     # TODO: hacer pruebas con parámetros
-
 
 # =====================================
 # EJERCICIO 5: CLASIFICACIÓN MULTICLASE
@@ -903,7 +912,7 @@ def one_hot_encode(X, index=False):
 
     return res[:,1:],columns
 
-e6_1 = True
+e6_1 = False
 if e6_1:
     print('Ejercicio 6.1')
     print('')
