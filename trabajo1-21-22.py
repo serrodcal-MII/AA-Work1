@@ -426,7 +426,6 @@ def transform(X):
     x0 = np.ones((X.shape[0], 1))
     # Add x0 in the begining to transform x0 + w·x into w·x
     Xt = np.hstack((x0,X))
-    #Xt = np.append(X, x0, axis=1) TODO: borrar
     return Xt
 
 # perform random shuffle keeping the correspondence
