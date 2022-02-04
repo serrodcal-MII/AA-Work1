@@ -154,6 +154,9 @@ import carga_datos
 #          array([81, 91, 88]))
 # ------------------------------------------------------------------
 
+# Flag to enable all the exercises
+e = True
+
 def particion_entr_prueba(X,y,test=0.20):
     # Maintain correspondence between X and y
     # Note: (n,) is not the same shape of (n,1), casting vector by using [:, None]
@@ -195,7 +198,7 @@ def particion_entr_prueba(X,y,test=0.20):
     return X_train, X_test, y_train, y_test 
 
 e1 = False
-if e1:
+if e1 or e:
     print('Ejercicio 1')
     print('')
     X_votos, y_votos = carga_datos.X_votos, carga_datos.y_votos
@@ -451,7 +454,6 @@ class RegresionLogisticaMiniBatch():
         self.rate = rate
         self.rate_decay = rate_decay
         self.batch_size = batch_tam
-        self.intial_weight = pesos_iniciales
         self.w = pesos_iniciales # model
         self.mean = None
         self.std = None
@@ -523,7 +525,7 @@ class RegresionLogisticaMiniBatch():
         return np.asarray(y)
 
 e2 = False
-if e2:
+if e2 or e:
     print('Ejercicio 2')
     print('')
     X_votos, y_votos = carga_datos.X_votos, carga_datos.y_votos
@@ -678,7 +680,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 e3 = False
-if e3:
+if e3 or e:
     print('Ejercicio 3')
     print('')
     X_cancer, y_cancer = carga_datos.X_cancer, carga_datos.y_cancer
@@ -699,7 +701,6 @@ if e3:
     # 0.9203539823008849
     print('')
 
-
 # ===================================================
 # EJERCICIO 4: APLICANDO LOS CLASIFICADORES BINARIOS
 # ===================================================
@@ -716,8 +717,8 @@ if e3:
 
 # Mostrar el proceso realizado en cada caso, y los rendimientos finales obtenidos. 
 
-e4 = True
-if e4:
+e4 = False
+if e4 or e:
     print('Ejercicio 4')
     print('')
     # Votos
@@ -748,10 +749,7 @@ if e4:
 
     score = rendimiento_validacion_cruzada(RegresionLogisticaMiniBatch,{"batch_tam":30,"rate_decay":True,"rate":0.001},X_train_imdb,y_train_imdb,n=8)
     print('Resultado rendimiento para imdb en validación cruzada con {"batch_tam":30,"rate_decay":True,"rate":0.001} y n=8',score)
-
     print('')
-
-    # TODO: hacer pruebas con parámetros
 
 # =====================================
 # EJERCICIO 5: CLASIFICACIÓN MULTICLASE
@@ -845,7 +843,7 @@ class RegresionLogisticaOvR():
         return np.asarray(y)
 
 e5 = False
-if e5:
+if e5 or e:
     print('Ejercicio 5')
     print('')
     X_iris, y_iris = carga_datos.X_iris, carga_datos.y_iris
@@ -866,7 +864,6 @@ if e5:
     # 0.9607843137254902
     print('')
 
-
 # ==============================================
 # EJERCICIO 6: APLICACION A PROBLEMAS MULTICLASE
 # ==============================================
@@ -884,6 +881,7 @@ if e5:
 # "codificación one-hot", descrita en el tema "Preprocesado e ingeniería de características".
 # Se pide implementar esta transformación (directamete, SIN USAR Scikt Learn ni Pandas). 
 
+# Change class0, class1... by integeres like 0, 1...
 def to_int(X, classes):
     for i in range(len(classes)):
         X = np.where(X == classes[i], i, X)
@@ -891,33 +889,36 @@ def to_int(X, classes):
     return X
 
 def one_hot_encode(X, index=False):
-    columns = []
+    columns = [] # save columns
     res = np.zeros((X.shape[0],1))
 
     for i in range(X.shape[1]):
         classes = list(set(X[:,i])) # get all classes
         oha = np.zeros((X.shape[0], len(classes)), dtype=np.int64) # One hot array for each column initialize with zeros
 
-        X1 = to_int(X[:,i],classes)
+        X1 = to_int(X[:,i],classes) # convert classes into int (0,1,2...)
         X1 = X1.astype(np.int64)
         
-        oha[np.arange(X1.size),X1] = 1
+        oha[np.arange(X1.size),X1] = 1 # set 1 depending on the column
         
-        res = np.hstack((res,oha))
+        res = np.hstack((res,oha)) # append colums
         
         if index: # If concat index to column name (i.e. classification to 0-classification)
-            classes = list(map(lambda s: str(i) + '-' + s, classes)) # Assing index to identify classes
+            classes = list(map(lambda s: str(i) + '-' + s, classes)) # Assign index to identify classes
 
         columns.extend(classes)
 
     return res[:,1:],columns
 
 e6_1 = False
-if e6_1:
+if e6_1 or e:
     print('Ejercicio 6.1')
     print('')
     X_credito, y_credito = carga_datos.X_credito, carga_datos.y_credito
     Xt_credito,columns = one_hot_encode(X_credito, index=True)
+
+    print("Columnas con indices", columns)
+    print('')
 
     Xe_credito,Xp_credito,ye_credito,yp_credito=particion_entr_prueba(Xt_credito,y_credito,test=1/3)
 
@@ -932,11 +933,9 @@ if e6_1:
     print('Resultado rendimiento para Xp_credito en Regresión Logística One-Hot',score)
     print('')
 
-
 # ---------------------------------------------------------
 # 6.2) Clasificación de imágenes de dígitos escritos a mano
 # ---------------------------------------------------------
-
 
 #  Aplicar la implementación o implementaciones del apartado anterior, para obtener un
 #  clasificador que prediga el dígito que se ha escrito a mano y que se
@@ -961,3 +960,77 @@ if e6_1:
 # Ajustar los parámetros de tamaño de batch, tasa de aprendizaje y
 # rate_decay para tratar de obtener un rendimiento aceptable (por encima del
 # 75% de aciertos sobre test). 
+
+import os
+
+def load_digits(filename):
+    # Current directory
+    pwd = os.getcwd()
+    f = open(pwd + filename, 'r')
+    lines = f.readlines()
+
+    digits_lines = []
+
+    for line in lines:
+        # Replacing all the characters by 0 or 1, and removing \n
+        tmp = ''.join(line).replace(' ','0').replace('+','1').replace('#','1').replace('\n','')
+        # Converting into list of integers
+        x = list(map(int,list(tmp)))
+        digits_lines.append(x)
+
+    X = np.array(digits_lines)
+    X = X.reshape((int(X.shape[0]/28),28*28))
+    return X
+
+def load_labels(filename):
+    pwd = os.getcwd()
+    f = open(pwd + filename, 'r')
+    lines = f.readlines()
+
+    labels = []
+
+    for line in lines:
+        tmp = line.replace('\n','')
+        labels.append(int(tmp))
+
+    return np.array(labels)
+
+e6_2 = False
+if e6_2 or e:
+    print('Ejercicio 6.2')
+    print('')
+    X_test = load_digits('/datos/digitdata/testimages')
+    y_test = load_labels('/datos/digitdata/testlabels')
+    X_train = load_digits('/datos/digitdata/trainingimages')
+    y_train = load_labels('/datos/digitdata/traininglabels')
+    X_validation = load_digits('/datos/digitdata/validationimages')
+    y_validation = load_labels('/datos/digitdata/validationlabels')
+
+    rl_digits=RegresionLogisticaOvR()
+
+    rl_digits.entrena(X_validation,y_validation)
+
+    score = rendimiento(rl_digits,X_test,y_test)
+    print('Resultado rendimiento para dígitos en Regresión Logística One-Hot con rate=0.1 y batch_tam=64',score)
+
+    rl_digits=RegresionLogisticaOvR(rate=1,batch_tam=32,rate_decay=True)
+
+    rl_digits.entrena(X_validation,y_validation)
+
+    score = rendimiento(rl_digits,X_test,y_test)
+    print('Resultado rendimiento para dígitos en Regresión Logística One-Hot con rate=1, batch_tam=32 y rate_decay',score)
+
+    rl_digits=RegresionLogisticaOvR(rate=0.001,batch_tam=20)
+
+    rl_digits.entrena(X_validation,y_validation)
+
+    score = rendimiento(rl_digits,X_test,y_test)
+    print('Resultado rendimiento para dígitos en Regresión Logística One-Hot con rate=0.001 y batch_tam=20',score)
+
+    rl_digits=RegresionLogisticaOvR(rate=1,batch_tam=32,rate_decay=True)
+
+    rl_digits.entrena(X_train,y_train)
+
+    score = rendimiento(rl_digits,X_test,y_test)
+    print('Resultado rendimiento para dígitos en Regresión Logística One-Hot sobre entrenamiento con rate=1, batch_tam=32 y rate_decay',score)
+    print('')
